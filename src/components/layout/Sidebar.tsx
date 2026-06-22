@@ -3,32 +3,50 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Package, ClipboardList,
+  LayoutDashboard, Package, ClipboardList, Store, Eye, Bell,
   Menu, X,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
-const NAV: Record<string, { icon: React.ElementType; label: string; href: string }[]> = {
-  super_admin: [
-    { icon: LayoutDashboard, label: "Dashboard",   href: "/admin/dashboard" },
-    { icon: Package,         label: "Products",    href: "/admin/products/pending" },
-  ],
-  qc_officer: [
-    { icon: ClipboardList,   label: "QC Queue",    href: "/qc/queue" },
-  ],
-  business_manager: [
-    { icon: LayoutDashboard, label: "Dashboard",   href: "/manager/dashboard" },
-    { icon: Package,         label: "Inventory",   href: "/manager/inventory" },
-  ],
-};
+type NavLink = { icon: React.ElementType; label: string; href: string };
+
+function navFor(role: string, userId: string): NavLink[] {
+  switch (role) {
+    case "super_admin":
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
+        { icon: Package,         label: "Products",  href: "/admin/products/pending" },
+        { icon: Bell,            label: "Notifications", href: "/notifications" },
+      ];
+    case "qc_officer":
+      return [
+        { icon: ClipboardList,   label: "QC Queue",  href: "/qc/queue" },
+        { icon: Bell,            label: "Notifications", href: "/notifications" },
+      ];
+    case "business_manager":
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/manager/dashboard" },
+        { icon: Package,         label: "Inventory", href: "/manager/inventory" },
+        { icon: Bell,            label: "Notifications", href: "/notifications" },
+      ];
+    case "citizen_seller":
+      return [
+        { icon: Store,           label: "My Portal", href: `/portal/${userId}/edit` },
+        { icon: Eye,             label: "Public View", href: `/portal/${userId}` },
+        { icon: Bell,            label: "Notifications", href: "/notifications" },
+      ];
+    default:
+      return [];
+  }
+}
 
 export default function Sidebar() {
   const { state } = useApp();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const links = NAV[state.currentRole] ?? [];
+  const links = navFor(state.currentRole, state.currentUser.id);
 
   if (!links.length) return null;
 

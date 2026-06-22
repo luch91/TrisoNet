@@ -12,7 +12,7 @@ import Link from "next/link";
 import { MapPin, Package, Store, Users, ShoppingCart, MessageSquare, Lock, ArrowRight, Tag } from "lucide-react";
 
 export default function ProductDetailPage() {
-  const { state } = useApp();
+  const { state, dispatch, addToast } = useApp();
   const params = useParams();
   const router = useRouter();
   const productId = params.productId as string;
@@ -65,7 +65,15 @@ export default function ProductDetailPage() {
               {canTransact && (
                 <div className="space-y-3 mt-5">
                   {product.negotiable && <Link href={`/marketplace/${product.id}/negotiate`} className="block"><Button className="w-full" size="lg"><MessageSquare className="w-4 h-4" /> Make an Offer</Button></Link>}
-                  <Link href={`/checkout/${product.id}`} className="block"><Button variant="secondary" className="w-full" size="lg"><ShoppingCart className="w-4 h-4" /> Buy Now</Button></Link>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    size="lg"
+                    onClick={() => { dispatch({ type: "ADD_TO_CART", productId: product.id, quantity: 1 }); addToast({ type: "success", title: "Added to cart", message: product.name }); }}
+                  >
+                    <ShoppingCart className="w-4 h-4" /> Add to Cart
+                  </Button>
+                  <Link href={`/checkout/${product.id}`} className="block"><Button variant="outline" className="w-full" size="lg">Buy Now</Button></Link>
                 </div>
               )}
               {isVisitor && (
@@ -73,7 +81,8 @@ export default function ProductDetailPage() {
                   <Lock className="w-6 h-6 text-primary-400 mx-auto mb-2" />
                   <p className="text-small font-semibold text-ink mb-1">Sign up as a Buyer to continue</p>
                   <p className="text-caption text-ink-subtle mb-3">Only verified buyers can make offers and complete purchases.</p>
-                  <Button size="sm" className="w-full">Create Buyer Account</Button>
+                  <Link href={`/signup?redirect=/marketplace/${product.id}`} className="block"><Button size="sm" className="w-full">Create Buyer Account</Button></Link>
+                  <Link href={`/login?redirect=/marketplace/${product.id}`} className="block mt-2"><Button size="sm" variant="ghost" className="w-full">I already have an account</Button></Link>
                 </div>
               )}
               {!canTransact && !isVisitor && <div className="mt-5 bg-bg rounded-xl p-4 border border-primary-100 text-center"><p className="text-caption text-ink-subtle">Switch to the Buyer role to transact.</p></div>}

@@ -1,22 +1,32 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { formatPrice, cn } from "@/lib/utils";
 import PageTransition from "@/components/layout/PageTransition";
 import { ProductCardSkeleton } from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
-import { Search, Package, MapPin, Eye } from "lucide-react";
+import { Search, Package, MapPin, Eye, ShoppingCart } from "lucide-react";
 
-const CATEGORIES = ["All", "Audio", "Smartphones", "TVs", "Laptops", "Dresses", "Fabrics", "Kitchen", "Home Decor"];
+const CATEGORIES = ["All", "Audio", "Smartphones", "TVs", "Laptops", "Dresses", "Fabrics", "Fashion", "Kitchen", "Home Decor"];
 type Sort = "newest" | "price-low" | "price-high" | "popular";
 
-export default function MarketplacePage() {
-  const { state } = useApp();
-  const [search, setSearch] = useState("");
+function MarketplaceInner() {
+  const { state, dispatch, addToast } = useApp();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState<Sort>("newest");
   const [loading] = useState(false);
+
+  // Keep the in-page search in sync with the header search (?q=).
+  useEffect(() => {
+    const q = searchParams.get("q") ?? "";
+    setSearch(q);
+  }, [searchParams]);
+
+  const isBuyer = state.currentRole === "buyer";
 
   const liveProducts = useMemo(() => {
     let p = state.products.filter((p) => p.status === "live");
@@ -87,7 +97,17 @@ export default function MarketplacePage() {
                     <div className="flex items-center gap-1 text-caption text-ink-subtle mb-3"><MapPin className="w-3 h-3" />{p.location ?? "Africa"}</div>
                     <div className="flex items-center justify-between">
                       <p className="text-h3 font-bold text-ink">{formatPrice(p.price)}</p>
-                      {!isVisitor && <span className="text-caption text-primary-600 font-medium">View &rarr;</span>}
+                      {isBuyer ? (
+                        <button
+                          onClick={(e) => { e.preventDefault(); dispatch({ type: "ADD_TO_CART", productId: p.id, quantity: 1 }); addToast({ type: "success", title: "Added to cart", message: p.name }); }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-50 text-primary-700 text-caption font-medium hover:bg-primary-100 transition-colors"
+                          aria-label="Add to cart"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" /> Add
+                        </button>
+                      ) : !isVisitor ? (
+                        <span className="text-caption text-primary-600 font-medium">View &rarr;</span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -97,5 +117,13 @@ export default function MarketplacePage() {
         )}
       </div>
     </PageTransition>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={null}>
+      <MarketplaceInner />
+    </Suspense>
   );
 }
