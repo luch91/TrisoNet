@@ -17,6 +17,18 @@ import {
   MOCK_TRANSACTIONS,
   MOCK_ACTIVITY,
 } from "./mock-data";
+import {
+  CoinAuction,
+  CoinTrade,
+  WalletEntry,
+  SEED_AUCTIONS,
+  SEED_TRADES,
+  SEED_LEDGER,
+  INITIAL_COIN_BALANCE,
+  INITIAL_CASH_BALANCE,
+} from "./coin-data";
+
+export type Theme = "light" | "dark";
 
 export interface CartItem {
   productId: string;
@@ -40,6 +52,12 @@ interface AppState {
   activity: ActivityEvent[];
   cart: CartItem[];
   preferences: Preferences;
+  coinAuctions: CoinAuction[];
+  coinTrades: CoinTrade[];
+  coinBalance: number;
+  cashBalance: number;
+  walletLedger: WalletEntry[];
+  theme: Theme;
   toasts: Toast[];
 }
 
@@ -71,6 +89,13 @@ type Action =
   | { type: "ADD_TOAST"; toast: Toast }
   | { type: "REMOVE_TOAST"; id: string }
   | { type: "ADD_ACTIVITY"; event: ActivityEvent }
+  | { type: "SET_THEME"; theme: Theme }
+  | { type: "PLACE_COIN_BID"; auctionId: string; amount: number }
+  | { type: "LAUNCH_COIN_AUCTION"; auction: CoinAuction }
+  | { type: "COMPLETE_COIN_TRADE"; trade: CoinTrade; coinDelta: number }
+  | { type: "END_COIN_AUCTION"; auctionId: string }
+  | { type: "WALLET_DEPOSIT"; amount: number; label: string }
+  | { type: "WALLET_WITHDRAW"; amount: number; label: string }
   | { type: "HYDRATE"; payload: Partial<AppState> };
 
 function getDefaultUser(role: Role): User {
@@ -95,6 +120,12 @@ const initialState: AppState = {
   activity: MOCK_ACTIVITY,
   cart: [],
   preferences: DEFAULT_PREFERENCES,
+  coinAuctions: SEED_AUCTIONS,
+  coinTrades: SEED_TRADES,
+  coinBalance: INITIAL_COIN_BALANCE,
+  cashBalance: INITIAL_CASH_BALANCE,
+  walletLedger: SEED_LEDGER,
+  theme: "light",
   toasts: [],
 };
 
@@ -217,6 +248,84 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, toasts: state.toasts.filter((t) => t.id !== action.id) };
     case "ADD_ACTIVITY":
       return { ...state, activity: [action.event, ...state.activity] };
+    case "SET_THEME":
+      return { ...state, theme: action.theme };
+    case "PLACE_COIN_BID":
+      return {
+        ...state,
+        coinAuctions: state.coinAuctions.map((a) => {
+          if (a.id !== action.auctionId) return a;
+          const isNewTop = action.amount > a.topBid;
+          return {
+            ...a,
+            topBid: Math.max(a.topBid, action.amount),
+            unitPrice: Math.round(Math.max(a.topBid, action.amount) / a.amount),
+            bids: a.bids + 1,
+            bidders: a.myLastBid ? a.bidders : a.bidders + 1,
+            myLastBid: action.amount,
+            myPosition: isNewTop ? 1 : a.myPosition ?? 2,
+            // surface the bid into the order book so the ladder reacts
+            book: {
+              ...a.book,
+              bids: [{ price: action.amount, amount: a.amount }, ...a.book.bids].slice(0, 5),
+            },
+          };
+        }),
+      };
+    case "LAUNCH_COIN_AUCTION":
+      return { ...state, coinAuctions: [action.auction, ...state.coinAuctions] };
+    case "COMPLETE_COIN_TRADE": {
+      const t = action.trade;
+      const fee = Math.round(t.finalBid * 0.005);
+      const won = t.status === "won"; // buyer pays; seller (sold) is credited
+      const cashDelta = won ? -t.finalBid : t.finalBid - fee;
+      const entry: WalletEntry = {
+        id: `w-${Date.now()}`,
+        type: won ? "purchase" : "sale",
+        label: won
+          ? `Won GKWTH/NGN #${t.auctionId} · ${t.amount} GKWTH`
+          : `Sold GKWTH/NGN #${t.auctionId} · ${t.amount} GKWTH`,
+        amountNgn: cashDelta,
+        amountGkwth: won ? t.amount : -t.amount,
+        status: "completed",
+        date: t.date,
+      };
+      return {
+        ...state,
+        coinTrades: [t, ...state.coinTrades],
+        coinBalance: Math.max(0, +(state.coinBalance + action.coinDelta).toFixed(2)),
+        cashBalance: Math.max(0, state.cashBalance + cashDelta),
+        walletLedger: [entry, ...state.walletLedger],
+        coinAuctions: state.coinAuctions.map((a) =>
+          a.id === t.auctionId ? { ...a, status: "sold" as const } : a
+        ),
+      };
+    }
+    case "END_COIN_AUCTION":
+      return {
+        ...state,
+        coinAuctions: state.coinAuctions.map((a) =>
+          a.id === action.auctionId ? { ...a, status: "ended" as const } : a
+        ),
+      };
+    case "WALLET_DEPOSIT":
+      return {
+        ...state,
+        cashBalance: state.cashBalance + action.amount,
+        walletLedger: [
+          { id: `w-${Date.now()}`, type: "deposit", label: action.label, amountNgn: action.amount, status: "completed", date: new Date().toISOString() },
+          ...state.walletLedger,
+        ],
+      };
+    case "WALLET_WITHDRAW":
+      return {
+        ...state,
+        cashBalance: Math.max(0, state.cashBalance - action.amount),
+        walletLedger: [
+          { id: `w-${Date.now()}`, type: "withdrawal", label: action.label, amountNgn: -action.amount, status: "pending", date: new Date().toISOString() },
+          ...state.walletLedger,
+        ],
+      };
     default:
       return state;
   }
@@ -239,6 +348,9 @@ interface PersistedShape {
   isAuthenticated: boolean;
   cart: CartItem[];
   preferences: Preferences;
+  coinBalance: number;
+  cashBalance: number;
+  theme: Theme;
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -257,6 +369,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (typeof parsed.isAuthenticated === "boolean") payload.isAuthenticated = parsed.isAuthenticated;
       if (Array.isArray(parsed.cart)) payload.cart = parsed.cart;
       if (parsed.preferences) payload.preferences = { ...DEFAULT_PREFERENCES, ...parsed.preferences };
+      if (typeof parsed.coinBalance === "number") payload.coinBalance = parsed.coinBalance;
+      if (typeof parsed.cashBalance === "number") payload.cashBalance = parsed.cashBalance;
+      if (parsed.theme === "light" || parsed.theme === "dark") payload.theme = parsed.theme;
       if (Object.keys(payload).length) dispatch({ type: "HYDRATE", payload });
     } catch {
       /* ignore corrupt storage */
@@ -272,12 +387,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isAuthenticated: state.isAuthenticated,
         cart: state.cart,
         preferences: state.preferences,
+        coinBalance: state.coinBalance,
+        cashBalance: state.cashBalance,
+        theme: state.theme,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
     } catch {
       /* ignore quota / unavailable storage */
     }
-  }, [state.currentRole, state.currentUser, state.isAuthenticated, state.cart, state.preferences]);
+  }, [state.currentRole, state.currentUser, state.isAuthenticated, state.cart, state.preferences, state.coinBalance, state.cashBalance, state.theme]);
+
+  // Reflect the chosen theme on <html> so Tailwind's `dark:` variant + token vars apply app-wide.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", state.theme === "dark");
+    root.style.colorScheme = state.theme;
+  }, [state.theme]);
 
   function addToast(toast: Omit<Toast, "id">) {
     const id = `toast-${Date.now()}`;

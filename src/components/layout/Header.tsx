@@ -3,9 +3,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, ShoppingBag, ShoppingCart, Search, LogOut, User as UserIcon, Package, LayoutDashboard, Store, Settings, ChevronDown } from "lucide-react";
+import { Bell, ShoppingBag, ShoppingCart, Search, LogOut, User as UserIcon, Package, LayoutDashboard, Store, Settings, ChevronDown, Coins } from "lucide-react";
 import { useApp } from "@/lib/store";
 import RoleSwitcher from "./RoleSwitcher";
+import ThemeToggle from "./ThemeToggle";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ export default function Header() {
         {isShopper && (
           <nav className="hidden md:flex items-center gap-1 shrink-0">
             <NavLink href="/marketplace">Marketplace</NavLink>
+            <NavLink href="/exchange">Exchange</NavLink>
             <NavLink href="/sellers">Sellers</NavLink>
             {isAuthed && <NavLink href="/orders">Orders</NavLink>}
           </nav>
@@ -63,6 +65,16 @@ export default function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
+          {/* GKWTH balance pill */}
+          {isAuthed && (
+            <Link href="/exchange/wallet" className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-primary-200 text-small font-semibold text-ink hover:bg-primary-50 transition-colors" title="GKWTH Wallet">
+              <Coins className="w-4 h-4 text-secondary" />
+              <span className="tabular-nums">{state.coinBalance.toLocaleString()}</span>
+              <span className="text-primary-600">GKWTH</span>
+            </Link>
+          )}
+
+          <ThemeToggle />
           <RoleSwitcher />
 
           {/* Cart (buyers) */}
@@ -112,7 +124,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
       href={href}
       className={cn(
         "px-3 py-2 text-small font-medium rounded-md transition-colors",
-        active ? "text-primary-700 bg-primary-50" : "text-ink-subtle hover:text-ink hover:bg-bg"
+        active ? "text-primary-700 dark:text-primary-300 bg-primary-50" : "text-ink-subtle hover:text-ink hover:bg-bg"
       )}
     >
       {children}

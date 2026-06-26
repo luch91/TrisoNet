@@ -14,6 +14,32 @@ export function formatPrice(amount: number): string {
   }).format(amount);
 }
 
+export function formatNaira(amount: number, opts?: { decimals?: number }): string {
+  const decimals = opts?.decimals ?? 0;
+  return `₦${amount.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+}
+
+/** Compact money for stat tiles, e.g. ₦2.4M, ₦920k, ₦540. */
+export function formatCompact(amount: number, prefix = "₦"): string {
+  const abs = Math.abs(amount);
+  if (abs >= 1_000_000_000) return `${prefix}${(amount / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
+  if (abs >= 1_000_000) return `${prefix}${(amount / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (abs >= 1_000) return `${prefix}${(amount / 1_000).toFixed(abs >= 100_000 ? 0 : 1).replace(/\.0$/, "")}k`;
+  return `${prefix}${amount.toLocaleString("en-US")}`;
+}
+
+/** Human countdown to an ISO timestamp, e.g. "2h 14m", "12m", "Ended". */
+export function timeLeft(endsAt: string): string {
+  const diffMs = new Date(endsAt).getTime() - Date.now();
+  if (diffMs <= 0) return "Ended";
+  const mins = Math.floor(diffMs / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  if (days >= 1) return `${days}d ${hours % 24}h`;
+  if (hours >= 1) return `${hours}h ${mins % 60}m`;
+  return `${mins}m`;
+}
+
 export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
     year: "numeric",

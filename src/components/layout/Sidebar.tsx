@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Package, ClipboardList, Store, Eye, Bell,
+  LayoutDashboard, Package, ClipboardList, Store, Eye, Bell, Coins,
   Menu, X,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
@@ -35,6 +35,7 @@ function navFor(role: string, userId: string): NavLink[] {
       return [
         { icon: Store,           label: "My Portal", href: `/portal/${userId}/edit` },
         { icon: Eye,             label: "Public View", href: `/portal/${userId}` },
+        { icon: Coins,           label: "GKWTH Exchange", href: "/exchange/portfolio" },
         { icon: Bell,            label: "Notifications", href: "/notifications" },
       ];
     default:

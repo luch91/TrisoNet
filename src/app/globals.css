@@ -2,12 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Semantic tokens are stored as space-separated RGB channels so Tailwind can apply
+ * opacity modifiers (e.g. bg-ink/30) AND so the whole app re-themes from one class.
+ * Brand blues (primary 300-900) and teal stay constant — only neutrals + subtle
+ * primary tints (p50/p100/p200) flip between light and dark.
+ */
 :root {
+  --bg:         245 250 253; /* #F5FAFD */
+  --surface:    255 255 255; /* #FFFFFF */
+  --surface-2:  245 250 253; /* #F5FAFD */
+  --ink:        19 32 43;    /* #13202B */
+  --ink-muted:  74 85 104;   /* #4a5568 */
+  --ink-subtle: 113 128 150; /* #718096 */
+  --p50:  240 248 255; /* #f0f8ff */
+  --p100: 223 241 254; /* #dff1fe */
+  --p200: 184 228 253; /* #b8e4fd */
+  --up:   66 158 157;  /* teal  #429E9D */
+  --down: 229 62 62;   /* red   #e53e3e */
+
+  /* legacy aliases kept for any direct var() consumers */
   --color-primary:   #87D0FD;
   --color-secondary: #429E9D;
   --color-ink:       #13202B;
   --color-surface:   #FFFFFF;
   --color-bg:        #F5FAFD;
+}
+
+.dark {
+  --bg:         8 15 22;     /* deep slate */
+  --surface:    17 28 38;    /* elevated panel */
+  --surface-2:  24 38 50;    /* higher elevation */
+  --ink:        232 240 247;
+  --ink-muted:  168 184 197;
+  --ink-subtle: 124 142 156;
+  /* slate-tinted so existing bg-primary-50 fills & border-primary-100 lines read as
+     elevation/borders in dark instead of bright blue */
+  --p50:  28 44 58;
+  --p100: 38 58 74;
+  --p200: 52 78 98;
+  --up:   72 187 175;  /* slightly brighter teal for dark bg legibility */
+  --down: 248 113 113; /* softer red for dark bg */
+
+  --color-ink:     #e8f0f7;
+  --color-surface: #111c26;
+  --color-bg:      #080f16;
 }
 
 @layer base {
@@ -20,11 +59,12 @@
   }
 
   body {
-    color: var(--color-ink);
-    background: var(--color-bg);
+    color: rgb(var(--ink));
+    background: rgb(var(--bg));
     font-family: var(--font-inter), Inter, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   @media (prefers-reduced-motion: reduce) {

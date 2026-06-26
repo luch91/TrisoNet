@@ -85,7 +85,7 @@ function RoleRow({ role, active, onClick }: { role: typeof ROLES[0]; active: boo
       onClick={onClick}
       className={cn(
         "w-full flex items-center gap-3 px-2.5 py-2 rounded-md text-small transition-colors",
-        active ? "bg-primary-50 text-primary-700 font-medium" : "text-ink hover:bg-bg"
+        active ? "bg-primary-50 text-primary-700 dark:text-primary-300 font-medium" : "text-ink hover:bg-bg"
       )}
     >
       <span className="text-base leading-none">{role.emoji}</span>

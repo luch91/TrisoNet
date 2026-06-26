@@ -6,8 +6,10 @@ import Button from "@/components/ui/Button";
 import PageTransition from "@/components/layout/PageTransition";
 import {
   ShoppingBag, Shield, Store, Users, ArrowRight, Search, MessageSquare,
-  CreditCard, MapPin, Star, CheckCircle,
+  CreditCard, MapPin, Star, CheckCircle, Coins, TrendingUp,
 } from "lucide-react";
+import { GKWTH } from "@/lib/coin-data";
+import { formatNaira } from "@/lib/utils";
 
 const CATEGORIES = [
   { label: "Electronics", icon: "📱" },
@@ -111,6 +113,40 @@ export default function HomePage() {
                 </div>
               </Link>
             ))}
+          </div>
+        </section>
+
+        {/* GKWTH Exchange promo */}
+        <section className="py-12">
+          <div className="relative overflow-hidden rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 to-secondary-50 p-6 sm:p-8">
+            <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-secondary-100/40 blur-3xl" />
+            <div className="relative flex flex-col lg:flex-row items-start lg:items-center gap-6">
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-primary-200 text-caption font-medium text-secondary mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" /> New · GKWTH Exchange
+                </div>
+                <h2 className="text-h2 text-ink flex items-center gap-2">
+                  <Coins className="w-6 h-6 text-secondary" /> Trade &amp; auction GKWTH coins
+                </h2>
+                <p className="text-small text-ink-subtle mt-2 max-w-xl">
+                  Bid on live coin auctions, watch the order book move in real time, or list your own
+                  GKWTH for sale and accept the best offer — all in Naira, settled to your wallet.
+                </p>
+                <div className="flex items-center gap-3 mt-5 flex-wrap">
+                  <Link href="/exchange"><Button><TrendingUp className="w-4 h-4" /> Open Exchange</Button></Link>
+                  <Link href="/exchange/sell"><Button variant="outline">List your GKWTH</Button></Link>
+                </div>
+              </div>
+              <div className="w-full lg:w-64 rounded-xl bg-surface border border-primary-100 shadow-card p-4 shrink-0">
+                <p className="text-caption text-ink-subtle uppercase tracking-wide">GKWTH / NGN</p>
+                <p className="text-h1 font-bold text-ink mt-1 tabular-nums">{formatNaira(GKWTH.price)}</p>
+                <p className="text-small text-secondary font-medium">+{GKWTH.change24h}% today</p>
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary-50 text-caption">
+                  <span className="text-ink-subtle">Live auctions</span>
+                  <span className="font-semibold text-ink">{GKWTH.liveAuctions}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

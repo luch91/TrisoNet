@@ -8,8 +8,8 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     title: "Marketplace",
     links: [
       { label: "Browse products", href: "/marketplace" },
+      { label: "GKWTH Exchange", href: "/exchange" },
       { label: "Seller portals", href: "/sellers" },
-      { label: "Market Square", href: "/marketplace" },
       { label: "Citizen listings", href: "/marketplace" },
     ],
   },
@@ -18,8 +18,8 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     links: [
       { label: "Become a seller", href: "/signup" },
       { label: "Open a portal", href: "/signup" },
+      { label: "Sell GKWTH coins", href: "/exchange/sell" },
       { label: "Seller guidelines", href: "/marketplace" },
-      { label: "Promotion tools", href: "/marketplace" },
     ],
   },
   {
